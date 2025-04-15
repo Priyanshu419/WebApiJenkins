@@ -1,5 +1,8 @@
 provider "azurerm" {
   features {}
+
+  subscription_id = "39007855-6a12-4f14-ac77-13c3310b2789"
+  tenant_id       = "f56c6c65-c045-4485-9192-aa84a2951b0e"
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -48,3 +51,4 @@ resource "azurerm_role_assignment" "acr_pull" {
   role_definition_name = "AcrPull"
   principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity.object_id
 }
+
