@@ -2,12 +2,18 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub'    // ID of your DockerHub credentials in Jenkins
+        DOCKERHUB_CREDENTIALS = 'dockerhub'
         DOCKERHUB_USERNAME = 'priyanshugupta419'
         IMAGE_NAME = 'priyanshugupta419/simple-node-app'
     }
 
     stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/Priyanshu419/WebApiJenkins.git'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
