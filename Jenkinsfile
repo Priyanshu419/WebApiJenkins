@@ -2,18 +2,12 @@ pipeline {
     agent any
 
     environment {
-        AZURE_CREDENTIALS_ID = 'jenkins-pipeline-sp'
-        ACR_NAME = 'codecraftacr123'
-        ACR_LOGIN_SERVER = 'codecraftacr123.azurecr.io'
-        IMAGE_NAME = 'webapidocker1'
-        RESOURCE_GROUP = 'codecraft-rg'
-        CLUSTER_NAME = 'codecraft-aks'
-        K8S_NAMESPACE = 'default'
-        TF_WORKING_DIR= '.'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creation')
+        IMAGE_NAME = 'priyanshugupta419/simple-node-app'  // Your Docker Hub repo name
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/Priyanshu419/WebApiJenkins.git'
             }
@@ -21,52 +15,29 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    dockerImage = docker.build("${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest", "--file ./Dockerfile .")
-                }
+                bat "docker build -t %IMAGE_NAME% ."
             }
         }
 
-        stage('Login to ACR') {
+        stage('Login to Docker Hub') {
             steps {
-                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    sh '''
-                        az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-                        az acr login --name $ACR_NAME
-                    '''
-                }
+                bat "echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin"
             }
         }
 
-        stage('Push Image to ACR') {
+        stage('Push Image to Docker Hub') {
             steps {
-                script {
-                    docker.withRegistry("https://${ACR_LOGIN_SERVER}", '') {
-                        dockerImage.push('latest')
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to AKS') {
-            steps {
-                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    sh '''
-                        az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-                        az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
-                        kubectl apply -f ./k8s/
-                    '''
-                }
+                bat "docker push %IMAGE_NAME%"
             }
         }
     }
 
     post {
         success {
-            echo 'Deployment to AKS Successful!'
+            echo 'Docker image built and pushed successfully!'
         }
         failure {
-            echo 'Deployment Failed!'
+            echo 'Pipeline failed.'
         }
     }
 }
