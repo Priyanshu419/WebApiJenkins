@@ -2,43 +2,34 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creation')
+        DOCKERHUB_CREDENTIALS = 'dockerhub'
+        DOCKERHUB_USERNAME = 'priyanshugupta419'
         IMAGE_NAME = 'priyanshugupta419/simple-node-app'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Priyanshu419/WebApiJenkins.git'
+                git 'https://github.com/Priyanshu419/capgemini-jenkins-pipeline.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %%IMAGE_NAME%% ."
+                script {
+                    docker.build("${IMAGE_NAME}")
+                }
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Push Docker Image') {
             steps {
-                bat "echo %%DOCKERHUB_CREDENTIALS_PSW%% | docker login -u %%DOCKERHUB_CREDENTIALS_USR%% --password-stdin"
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        docker.image("${IMAGE_NAME}").push('latest')
+                    }
+                }
             }
-        }
-
-        stage('Push Image to Docker Hub') {
-            steps {
-                bat "docker push %%IMAGE_NAME%%"
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Docker image built and pushed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed.'
         }
     }
 }
-
