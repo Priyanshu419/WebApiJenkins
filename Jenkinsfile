@@ -2,34 +2,37 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub'
-        DOCKERHUB_USERNAME = 'priyanshugupta419'
-        IMAGE_NAME = 'priyanshugupta419/simple-node-app'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"
+        IMAGE_NAME = 'simple-node-app'
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Build Docker Image') {
             steps {
-                git 'https://github.com/Priyanshu419/WebApiJenkins.git'
+                bat "docker build -t %DOCKERHUB_USERNAME%/%IMAGE_NAME%:latest ."
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Login to Docker Hub') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}")
-                }
+                bat "echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_USERNAME% --password-stdin"
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
-                        docker.image("${IMAGE_NAME}").push('latest')
-                    }
-                }
+                bat "docker push %DOCKERHUB_USERNAME%/%IMAGE_NAME%:latest"
             }
+        }
+    }
+
+    post {
+        success {
+            echo ' Docker image built and pushed successfully!'
+        }
+        failure {
+            echo ' Pipeline failed.'
         }
     }
 }
