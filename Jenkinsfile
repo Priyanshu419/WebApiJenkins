@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Priyanshu419/WebApiJenkins.git'
+                git branch: 'main', url: 'https://github.com/Priyanshu419/WebApiJenkins/edit/master/Jenkinsfile.git'
             }
         }
 
